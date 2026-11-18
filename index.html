@@ -3,27 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Palm City — Mini GTA</title>
+<title>Vice City — Mini GTA 6 (fan-made)</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{width:100%;height:100%;overflow:hidden;background:#14181d;font-family:Arial,Helvetica,sans-serif;touch-action:none}
+  html,body{width:100%;height:100%;overflow:hidden;background:#1a0b2e;font-family:Arial,Helvetica,sans-serif;touch-action:none}
   #game{display:block;width:100vw;height:100vh}
-  #start{position:fixed;inset:0;background:linear-gradient(160deg,#0d1420,#1d2b12 60%,#3a2b12);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:20;padding:20px}
-  #start h1{font-size:52px;letter-spacing:4px;color:#ffd23f;text-shadow:0 4px 0 #b8860b,0 8px 24px rgba(0,0,0,.6)}
-  #start h2{font-size:16px;color:#9fd08a;margin:6px 0 18px;letter-spacing:2px}
-  #start p{max-width:520px;line-height:1.55;color:#dfe8d8;font-size:14px}
-  #startBtn{margin-top:22px;padding:14px 44px;font-size:20px;font-weight:bold;letter-spacing:2px;color:#111;background:#ffd23f;border:none;border-radius:10px;cursor:pointer;box-shadow:0 6px 0 #b8860b}
-  #startBtn:active{transform:translateY(4px);box-shadow:0 2px 0 #b8860b}
-  .ctrl{margin-top:16px;font-size:12px;color:#9fb3a0;line-height:1.7}
-  #muteBtn,#touchToggle{position:fixed;top:10px;z-index:15;width:42px;height:42px;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:rgba(0,0,0,.5);color:#fff;font-size:20px;cursor:pointer}
+  #start{position:fixed;inset:0;background:linear-gradient(160deg,#2b0f4a,#ff2e9a 55%,#ff7e3d);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:20;padding:20px}
+  #start h1{font-size:52px;letter-spacing:4px;color:#ff5ec4;text-shadow:0 0 16px rgba(255,94,196,.9),0 0 42px rgba(0,229,255,.55),0 4px 0 #7b2ff7,0 8px 24px rgba(0,0,0,.6)}
+  #start h2{font-size:16px;color:#00e5ff;margin:6px 0 18px;letter-spacing:3px}
+  #start p{max-width:520px;line-height:1.55;color:#ffe9f6;font-size:14px}
+  #startBtn{margin-top:22px;padding:14px 44px;font-size:20px;font-weight:bold;letter-spacing:2px;color:#fff;background:#ff2e9a;border:none;border-radius:10px;cursor:pointer;box-shadow:0 6px 0 #b3127f}
+  #startBtn:active{transform:translateY(4px);box-shadow:0 2px 0 #b3127f}
+  .ctrl{margin-top:16px;font-size:12px;color:#e8d5ff;line-height:1.7}
+  #muteBtn,#touchToggle{position:fixed;top:10px;z-index:15;width:42px;height:42px;border-radius:50%;border:2px solid rgba(255,94,196,.6);background:rgba(0,0,0,.5);color:#fff;font-size:20px;cursor:pointer}
   #muteBtn{right:10px}
   #touchToggle{right:60px}
   #touch{display:none;position:fixed;inset:0;z-index:10;pointer-events:none}
   #joy{position:absolute;left:22px;bottom:22px;width:128px;height:128px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35);pointer-events:auto}
-  #stick{position:absolute;left:39px;top:39px;width:50px;height:50px;border-radius:50%;background:rgba(255,210,63,.85)}
+  #stick{position:absolute;left:39px;top:39px;width:50px;height:50px;border-radius:50%;background:rgba(255,46,154,.9)}
   #btns{position:absolute;right:18px;bottom:22px;display:grid;grid-template-columns:1fr 1fr;gap:10px;pointer-events:auto}
   #btns button{width:64px;height:64px;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:rgba(0,0,0,.55);color:#fff;font-size:24px;cursor:pointer}
-  #btns button:active{background:rgba(255,210,63,.7)}
+  #btns button:active{background:rgba(255,46,154,.7)}
   #btns .wide{grid-column:span 2;width:auto;height:44px;border-radius:22px;font-size:15px}
 </style>
 </head>
@@ -42,9 +42,10 @@
   </div>
 </div>
 <div id="start">
-  <h1>PALM CITY</h1>
-  <h2>MINI GTA &bull; OPEN WORLD</h2>
-  <p>Jelajahi kota, curi mobil, kabur dari polisi, dan selesaikan misi untuk jadi kaya.
+  <h1>VICE CITY</h1>
+  <h2>MINI GTA 6 &bull; OPEN WORLD (FAN-MADE)</h2>
+  <p>Main sebagai Lucia di Vice City, Leonida. Jelajahi Ocean Drive sampai Vice Beach,
+  curi mobil, kabur dari VCPD, dan selesaikan misi untuk jadi kaya.
   Uangmu tersimpan otomatis di browser ini.</p>
   <button id="startBtn">▶ MULAI MAIN</button>
   <div class="ctrl">
@@ -52,6 +53,7 @@
     Space / Klik = tembak &nbsp;•&nbsp; H = klakson &nbsp;•&nbsp; M = mulai misi &nbsp;•&nbsp; P = mute<br>
     Di HP: joystick kiri untuk gerak, tombol kanan untuk aksi.
   </div>
+  <div class="ctrl" style="margin-top:8px;opacity:.75">Fan-made, bukan produk resmi Rockstar Games.</div>
 </div>
 <script>
 'use strict';
@@ -70,9 +72,10 @@ const N=20,ROAD=52,BLOCK=168,CELL=ROAD+BLOCK,MAP=N*CELL+ROAD;
 const RC=i=>i*CELL+ROAD/2;
 const rng=mulberry32(1337);
 const buildings=[],trees=[];
-const PALETTE=['#8d8578','#7c8aa0','#a08a72','#6f7f6b','#966f57','#5f7086','#9c8a6a','#746a80'];
+const PALETTE=['#ff9ecf','#7fd4ff','#c9a6ff','#ffd6a5','#9ff5d2','#ff8fb2','#a5c8ff','#f6b8ff'];
 for(let bx=0;bx<N;bx++)for(let by=0;by<N;by++){
   const x0=bx*CELL+ROAD,y0=by*CELL+ROAD;
+  if(by===N-1)continue; // Vice Beach — baris pantai, tanpa gedung
   if(rng()<0.12){ // taman
     for(let t=0;t<7;t++)trees.push({x:x0+R(16,BLOCK-16),y:y0+R(16,BLOCK-16),r:R(7,13)});
     buildings.push({x:x0,y:y0,w:BLOCK,h:BLOCK,park:true});
@@ -91,6 +94,12 @@ for(let bx=0;bx<N;bx++)for(let by=0;by<N;by++){
     buildings.push({x:x0+14,y:y0+BLOCK-10-h2,w:BLOCK-28,h:h2,c:pick(PALETTE)});
   }
 }
+// pohon palem di pasir Vice Beach
+for(let t=0;t<14;t++)trees.push({x:R(40,MAP-40),y:MAP-CELL+R(24,BLOCK*0.42),r:R(9,14)});
+// pohon palem di trotoar Ocean Drive
+for(let x=90;x<MAP;x+=150)trees.push({x:x,y:19*CELL-5,r:R(9,13)});
+// laut — menghalangi jalan (digambar terpisah di draw)
+buildings.push({x:0,y:MAP-CELL+BLOCK*0.5,w:MAP,h:BLOCK*0.5+ROAD,water:true});
 function hitB(x,y,r){
   for(let i=0;i<buildings.length;i++){const b=buildings[i];if(b.park)continue;
     if(x+r>b.x&&x-r<b.x+b.w&&y+r>b.y&&y-r<b.y+b.h)return b;}
@@ -175,8 +184,8 @@ function startMission(){
   if(!started)return;
   if(mission){toast('Selesaikan misi aktif dulu!');return;}
   const type=MTYPES[missionIdx%3];missionIdx++;
-  if(type==='deliver'){const p=randRoadPoint(500);mission={type:type,label:'Antar Paket',tx:p.x,ty:p.y,reward:150};}
-  else if(type==='timed'){const p=randRoadPoint(500);mission={type:type,label:'Kejar Waktu',tx:p.x,ty:p.y,reward:200,timer:40};}
+  if(type==='deliver'){mission={type:type,label:'Antar Paket ke Ocean Drive',tx:R(200,MAP-200),ty:RC(19),reward:150};}
+  else if(type==='timed'){mission={type:type,label:'Cepat ke Vice Beach',tx:R(200,MAP-200),ty:MAP-CELL+60,reward:200,timer:40};}
   else{
     const p=randRoadPoint(600);
     const c=mkCar(p.x,p.y,0,'#ff7f00','target');c.axis='v';c.dir=1;c.speed=180;CARS.push(c);
@@ -334,7 +343,7 @@ function tryEnterExit(){
   if(best){
     if(best.kind==='traffic'&&best.driver==='npc'){
       spawnPedAt(best.x+20,best.y);
-      addWanted(1);toast('Carjack! Polisi mengejarmu +1 ★');
+      addWanted(1);toast('Carjack! VCPD mengejarmu +1 ★');
     }
     best.driver='player';player.inCar=best;
   }
@@ -379,7 +388,7 @@ function updateTraffic(c,dt){
       else{c.axis='v';c.dir=Math.random()<0.5?1:-1;c.x=center-14*c.dir;}
     }
   }
-  if(along<36){c.dir=1;}else if(along>MAP-36){c.dir=-1;}
+  if(along<36){c.dir=1;}else if(along>(c.axis==='v'?MAP-CELL-40:MAP-36)){c.dir=-1;}
   if(c.axis==='v'){c.y+=c.dir*sp*dt;c.angle=c.dir>0?Math.PI/2:-Math.PI/2;}
   else{c.x+=c.dir*sp*dt;c.angle=c.dir>0?0:Math.PI;}
   // berhenti sebentar kalau menabrak mobil pemain
@@ -400,7 +409,7 @@ function updatePed(p,dt){
       else{p.axis='v';p.dir=Math.random()<0.5?1:-1;p.x=center+p.side*(ROAD/2+9);}
     }
   }
-  if(along<30)p.dir=1;else if(along>MAP-30)p.dir=-1;
+  if(along<30)p.dir=1;else if(along>(p.axis==='v'?MAP-CELL-40:MAP-30))p.dir=-1;
   if(p.axis==='v')p.y+=p.dir*p.speed*dt;else p.x+=p.dir*p.speed*dt;
 }
 function updatePolice(c,dt){
@@ -413,7 +422,7 @@ function updatePolice(c,dt){
   if(d<36&&c.hitCd<=0){
     c.hitCd=0.8;c.speed*=-0.25;
     damage(8);
-    toast('Polisi menabrakmu!');
+    toast('VCPD menabrakmu!');
   }
 }
 function updateBullets(dt){
@@ -537,7 +546,7 @@ function drawCar(c){
   ctx.fillStyle='rgba(0,0,0,.25)';
   ctx.fillRect(-17,-9,34,4);
   if(c.kind==='police'){
-    ctx.fillStyle='#1e50c8';ctx.fillRect(-6,-9,12,18);
+    ctx.fillStyle='#111';ctx.fillRect(-6,-9,12,18);
     const fl=Math.floor(t*6)%2===0;
     ctx.fillStyle=fl?'#ff2a2a':'#2a6bff';
     ctx.fillRect(-4,-11,8,4);
@@ -546,19 +555,19 @@ function drawCar(c){
   ctx.restore();
 }
 function draw(){
-  ctx.fillStyle='#20242a';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#150a24';ctx.fillRect(0,0,W,H);
   cam.x=clamp(player.x-W/2,0,Math.max(0,MAP-W));
   cam.y=clamp(player.y-H/2,0,Math.max(0,MAP-H));
   if(MAP<W)cam.x=(MAP-W)/2;
   if(MAP<H)cam.y=(MAP-H)/2;
   ctx.save();ctx.translate(-cam.x,-cam.y);
   // tanah (trotoar)
-  ctx.fillStyle='#9aa0a6';ctx.fillRect(0,0,MAP,MAP);
+  ctx.fillStyle='#b5a49c';ctx.fillRect(0,0,MAP,MAP);
   // jalan
-  ctx.fillStyle='#33373d';
+  ctx.fillStyle='#2b2433';
   for(let i=0;i<=N;i++){ctx.fillRect(i*CELL,0,ROAD,MAP);ctx.fillRect(0,i*CELL,MAP,ROAD);}
   // marka jalan
-  ctx.strokeStyle='#e8c33a';ctx.lineWidth=2;ctx.setLineDash([16,20]);
+  ctx.strokeStyle='#ff5ec4';ctx.lineWidth=2;ctx.setLineDash([16,20]);
   ctx.beginPath();
   for(let i=0;i<=N;i++){
     const c=RC(i);
@@ -566,21 +575,60 @@ function draw(){
     if(c>cam.y-60&&c<cam.y+H+60){ctx.moveTo(Math.max(0,cam.x-20),c);ctx.lineTo(Math.min(MAP,cam.x+W+20),c);}
   }
   ctx.stroke();ctx.setLineDash([]);
+  // kilau neon di tepi jalan (cyan, murah)
+  ctx.strokeStyle='rgba(0,229,255,0.25)';ctx.lineWidth=2;
+  ctx.beginPath();
+  for(let i=0;i<=N;i++){
+    const e0=i*CELL,e1=i*CELL+ROAD;
+    ctx.moveTo(e0,0);ctx.lineTo(e0,MAP);ctx.moveTo(e1,0);ctx.lineTo(e1,MAP);
+    ctx.moveTo(0,e0);ctx.lineTo(MAP,e0);ctx.moveTo(0,e1);ctx.lineTo(MAP,e1);
+  }
+  ctx.stroke();
+  // Vice Beach: pasir + laut
+  ctx.fillStyle='#e8d29a';ctx.fillRect(0,MAP-CELL,MAP,BLOCK*0.5);
+  ctx.fillStyle='#1e9bd8';ctx.fillRect(0,MAP-CELL+BLOCK*0.5,MAP,BLOCK*0.5+ROAD);
+  ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=2;
+  for(let wv=0;wv<3;wv++){
+    const wy=MAP-CELL+BLOCK*0.5+18+wv*28+Math.sin(t*1.4+wv*2)*3;
+    ctx.beginPath();ctx.moveTo(Math.max(0,cam.x-20),wy);ctx.lineTo(Math.min(MAP,cam.x+W+20),wy);ctx.stroke();
+  }
+  // label distrik
+  ctx.textAlign='center';
+  if(RC(4)>cam.x-160&&RC(4)<cam.x+W+160&&RC(2)>cam.y-60&&RC(2)<cam.y+H+60){
+    ctx.fillStyle='rgba(255,255,255,0.16)';ctx.font='bold 34px Arial';
+    ctx.fillText('DOWNTOWN',RC(4),RC(2));
+  }
+  if(MAP/2>cam.x-260&&MAP/2<cam.x+W+260&&19*CELL+ROAD/2>cam.y-40&&19*CELL+ROAD/2<cam.y+H+40){
+    ctx.fillStyle='rgba(0,229,255,0.45)';ctx.font='bold 26px Arial';
+    ctx.fillText('O C E A N   D R I V E',MAP/2,19*CELL+ROAD/2+9);
+  }
+  if(MAP/2>cam.x-200&&MAP/2<cam.x+W+200&&MAP-CELL+36>cam.y-50&&MAP-CELL+36<cam.y+H+50){
+    ctx.fillStyle='rgba(255,255,255,0.45)';ctx.font='bold 30px Arial';
+    ctx.fillText('VICE BEACH',MAP/2,MAP-CELL+36);
+  }
+  ctx.textAlign='left';
   // gedung & taman
   for(const b of buildings){
     if(b.x+b.w<cam.x||b.x>cam.x+W||b.y+b.h<cam.y||b.y>cam.y+H)continue;
-    if(b.park){ctx.fillStyle='#5da24a';ctx.fillRect(b.x,b.y,b.w,b.h);}
+    if(b.water)continue; // laut digambar di atas
+    if(b.park){ctx.fillStyle='#3aa655';ctx.fillRect(b.x,b.y,b.w,b.h);}
     else{
       ctx.fillStyle=b.c;ctx.fillRect(b.x,b.y,b.w,b.h);
       ctx.strokeStyle='rgba(0,0,0,.35)';ctx.lineWidth=3;ctx.strokeRect(b.x+1.5,b.y+1.5,b.w-3,b.h-3);
       ctx.fillStyle='rgba(255,255,255,.12)';ctx.fillRect(b.x+6,b.y+6,b.w-12,8);
     }
   }
-  // pohon
-  ctx.fillStyle='#2f7a33';
+  // pohon palem
   for(const tr of trees){
     if(tr.x>cam.x-20&&tr.x<cam.x+W+20&&tr.y>cam.y-20&&tr.y<cam.y+H+20){
-      ctx.beginPath();ctx.arc(tr.x,tr.y,tr.r,0,TAU);ctx.fill();
+      ctx.strokeStyle='#8a6b4a';ctx.lineWidth=3;
+      ctx.beginPath();ctx.moveTo(tr.x,tr.y+8);ctx.lineTo(tr.x,tr.y-4);ctx.stroke();
+      ctx.strokeStyle='#2fae5f';ctx.lineWidth=3;
+      for(let f=0;f<5;f++){
+        const a=-Math.PI/2+(f-2)*0.5;
+        ctx.beginPath();ctx.moveTo(tr.x,tr.y-4);
+        ctx.lineTo(tr.x+Math.cos(a)*tr.r,tr.y-4+Math.sin(a)*tr.r*0.7);ctx.stroke();
+      }
     }
   }
   // rumah sakit
@@ -591,11 +639,11 @@ function draw(){
     const tx=mission.type==='chase'?mission.target.x:mission.tx;
     const ty=mission.type==='chase'?mission.target.y:mission.ty;
     const pulse=1+Math.sin(t*5)*0.15;
-    ctx.strokeStyle='#ffd23f';ctx.lineWidth=4;
+    ctx.strokeStyle='#ff2e9a';ctx.lineWidth=4;
     ctx.beginPath();ctx.arc(tx,ty,26*pulse,0,TAU);ctx.stroke();
-    ctx.fillStyle='rgba(255,210,63,.25)';
+    ctx.fillStyle='rgba(255,46,154,.25)';
     ctx.beginPath();ctx.arc(tx,ty,26*pulse,0,TAU);ctx.fill();
-    ctx.fillStyle='#ffd23f';
+    ctx.fillStyle='#ff2e9a';
     ctx.beginPath();ctx.moveTo(tx,ty-34);ctx.lineTo(tx-8,ty-18);ctx.lineTo(tx+8,ty-18);ctx.closePath();ctx.fill();
   }
   // mobil
@@ -619,13 +667,15 @@ function draw(){
   // peluru
   ctx.fillStyle='#ffe14d';
   for(const b of BULLETS){ctx.beginPath();ctx.arc(b.x,b.y,4,0,TAU);ctx.fill();}
-  // pemain (jalan kaki)
+  // Lucia (jalan kaki)
   if(!player.inCar&&!wasted){
-    ctx.fillStyle='#ffd23f';
+    ctx.fillStyle='#ff2e9a';
     ctx.beginPath();ctx.arc(player.x,player.y,12,0,TAU);ctx.fill();
-    ctx.strokeStyle='#111';ctx.lineWidth=2;
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;
     ctx.beginPath();ctx.arc(player.x,player.y,12,0,TAU);ctx.stroke();
-    ctx.strokeStyle='#111';ctx.lineWidth=3;
+    ctx.fillStyle='#241611';
+    ctx.beginPath();ctx.arc(player.x-Math.cos(player.face)*3,player.y-Math.sin(player.face)*3,6,0,TAU);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=3;
     ctx.beginPath();ctx.moveTo(player.x,player.y);
     ctx.lineTo(player.x+Math.cos(player.face)*16,player.y+Math.sin(player.face)*16);ctx.stroke();
   }
@@ -633,15 +683,17 @@ function draw(){
   drawHUD();
 }
 function drawHUD(){
-  // uang + health
-  ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(10,10,210,64);
-  ctx.fillStyle='#7CFC00';ctx.font='bold 22px Arial';ctx.textAlign='left';
+  // uang + health (Lucia)
+  ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(10,10,210,84);
+  ctx.fillStyle='#ff5ec4';ctx.font='bold 22px Arial';ctx.textAlign='left';
   ctx.fillText('$'+money.toLocaleString('en-US'),20,36);
   ctx.fillStyle='#333';ctx.fillRect(20,46,190,12);
   ctx.fillStyle=player.hp>50?'#2ecc71':player.hp>25?'#f39c12':'#e74c3c';
   ctx.fillRect(20,46,190*player.hp/100,12);
   ctx.fillStyle='#fff';ctx.font='11px Arial';
   ctx.fillText('HP '+Math.ceil(player.hp),20,70);
+  ctx.fillStyle='#ff5ec4';ctx.font='bold 11px Arial';
+  ctx.fillText('LUCIA  •  VICE CITY',20,84);
   // wanted (di bawah tombol DOM kanan-atas supaya tidak tertutup)
   ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(W-190,62,180,44);
   ctx.font='bold 24px Arial';ctx.textAlign='right';
@@ -660,7 +712,7 @@ function drawHUD(){
     ctx.font='bold 15px Arial';
     const tw=ctx.measureText(label).width;
     ctx.fillRect(W/2-tw/2-12,H-46,tw+24,30);
-    ctx.fillStyle='#ffd23f';ctx.textAlign='center';
+    ctx.fillStyle='#ff5ec4';ctx.textAlign='center';
     ctx.fillText(label,W/2,H-26);ctx.textAlign='left';
     // panah ke target
     const sx=tx-cam.x,sy=ty-cam.y;
@@ -668,7 +720,7 @@ function drawHUD(){
       const cx=clamp(sx,30,W-30),cy=clamp(sy,30,H-30);
       const a=Math.atan2(sy-cy,sx-cx);
       ctx.save();ctx.translate(cx,cy);ctx.rotate(a);
-      ctx.fillStyle='#ffd23f';
+      ctx.fillStyle='#ff2e9a';
       ctx.beginPath();ctx.moveTo(16,0);ctx.lineTo(-8,-10);ctx.lineTo(-8,10);ctx.closePath();ctx.fill();
       ctx.restore();
     }
@@ -684,6 +736,8 @@ function drawHUD(){
   const MM=170,s=MM/MAP,mx=14,my=H-MM-14;
   ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(mx-4,my-4,MM+8,MM+8);
   ctx.fillStyle='#2c3138';ctx.fillRect(mx,my,MM,MM);
+  ctx.fillStyle='#e8d29a';ctx.fillRect(mx,my+(MAP-CELL)*s,MM,BLOCK*0.5*s);
+  ctx.fillStyle='#1e9bd8';ctx.fillRect(mx,my+(MAP-CELL+BLOCK*0.5)*s,MM,(BLOCK*0.5+ROAD)*s);
   ctx.fillStyle='#5a616a';
   for(let i=0;i<=N;i++){
     ctx.fillRect(mx+RC(i)*s-1,my,2,MM);
@@ -693,7 +747,7 @@ function drawHUD(){
   if(mission){
     const tx=mission.type==='chase'?mission.target.x:mission.tx;
     const ty=mission.type==='chase'?mission.target.y:mission.ty;
-    ctx.fillStyle='#ffd23f';
+    ctx.fillStyle='#ff2e9a';
     ctx.beginPath();ctx.arc(mx+tx*s,my+ty*s,5,0,TAU);ctx.fill();
   }
   ctx.fillStyle='#3498db';

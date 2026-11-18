@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Palm City — Mini GTA</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:#14181d;font-family:Arial,Helvetica,sans-serif;touch-action:none}
+  #game{display:block;width:100vw;height:100vh}
+  #start{position:fixed;inset:0;background:linear-gradient(160deg,#0d1420,#1d2b12 60%,#3a2b12);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:20;padding:20px}
+  #start h1{font-size:52px;letter-spacing:4px;color:#ffd23f;text-shadow:0 4px 0 #b8860b,0 8px 24px rgba(0,0,0,.6)}
+  #start h2{font-size:16px;color:#9fd08a;margin:6px 0 18px;letter-spacing:2px}
+  #start p{max-width:520px;line-height:1.55;color:#dfe8d8;font-size:14px}
+  #startBtn{margin-top:22px;padding:14px 44px;font-size:20px;font-weight:bold;letter-spacing:2px;color:#111;background:#ffd23f;border:none;border-radius:10px;cursor:pointer;box-shadow:0 6px 0 #b8860b}
+  #startBtn:active{transform:translateY(4px);box-shadow:0 2px 0 #b8860b}
+  .ctrl{margin-top:16px;font-size:12px;color:#9fb3a0;line-height:1.7}
+  #muteBtn,#touchToggle{position:fixed;top:10px;z-index:15;width:42px;height:42px;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:rgba(0,0,0,.5);color:#fff;font-size:20px;cursor:pointer}
+  #muteBtn{right:10px}
+  #touchToggle{right:60px}
+  #touch{display:none;position:fixed;inset:0;z-index:10;pointer-events:none}
+  #joy{position:absolute;left:22px;bottom:22px;width:128px;height:128px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35);pointer-events:auto}
+  #stick{position:absolute;left:39px;top:39px;width:50px;height:50px;border-radius:50%;background:rgba(255,210,63,.85)}
+  #btns{position:absolute;right:18px;bottom:22px;display:grid;grid-template-columns:1fr 1fr;gap:10px;pointer-events:auto}
+  #btns button{width:64px;height:64px;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:rgba(0,0,0,.55);color:#fff;font-size:24px;cursor:pointer}
+  #btns button:active{background:rgba(255,210,63,.7)}
+  #btns .wide{grid-column:span 2;width:auto;height:44px;border-radius:22px;font-size:15px}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<button id="muteBtn" title="Mute (P)">🔊</button>
+<button id="touchToggle" title="Kontrol sentuh">🎮</button>
+<div id="touch">
+  <div id="joy"><div id="stick"></div></div>
+  <div id="btns">
+    <button id="btnE" title="Masuk/Keluar Mobil (E)">🚗</button>
+    <button id="btnShoot" title="Tembak (Space)">🔫</button>
+    <button id="btnHorn" title="Klakson (H)">📯</button>
+    <button id="btnRun" title="Lari (Shift)">🏃</button>
+    <button id="btnMission" class="wide" title="Misi (M)">🎯 MISI</button>
+  </div>
+</div>
+<div id="start">
+  <h1>PALM CITY</h1>
+  <h2>MINI GTA &bull; OPEN WORLD</h2>
+  <p>Jelajahi kota, curi mobil, kabur dari polisi, dan selesaikan misi untuk jadi kaya.
+  Uangmu tersimpan otomatis di browser ini.</p>
+  <button id="startBtn">▶ MULAI MAIN</button>
+  <div class="ctrl">
+    WASD / Panah = jalan &nbsp;•&nbsp; Shift = lari &nbsp;•&nbsp; E = masuk/keluar mobil (dekat mobil lalu lintas = carjack!)<br>
+    Space / Klik = tembak &nbsp;•&nbsp; H = klakson &nbsp;•&nbsp; M = mulai misi &nbsp;•&nbsp; P = mute<br>
+    Di HP: joystick kiri untuk gerak, tombol kanan untuk aksi.
+  </div>
+</div>
+<script>
+'use strict';
+/* ================= helpers ================= */
+const TAU=Math.PI*2;
+const R=(a,b)=>a+Math.random()*(b-a);
+const RI=(a,b)=>Math.floor(R(a,b+1));
+const pick=a=>a[(Math.random()*a.length)|0];
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const angDiff=(a,b)=>{let d=(b-a)%TAU;if(d>Math.PI)d-=TAU;if(d<-Math.PI)d+=TAU;return d;};
+function mulberry32(s){return function(){s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const $=id=>document.getElementById(id);
+
+/* ================= map ================= */
+const N=20,ROAD=52,BLOCK=168,CELL=ROAD+BLOCK,MAP=N*CELL+ROAD;
+const RC=i=>i*CELL+ROAD/2;
+const rng=mulberry32(1337);
+const buildings=[],trees=[];
+const PALETTE=['#8d8578','#7c8aa0','#a08a72','#6f7f6b','#966f57','#5f7086','#9c8a6a','#746a80'];
+for(let bx=0;bx<N;bx++)for(let by=0;by<N;by++){
+  const x0=bx*CELL+ROAD,y0=by*CELL+ROAD;
+  if(rng()<0.12){ // taman
+    for(let t=0;t<7;t++)trees.push({x:x0+R(16,BLOCK-16),y:y0+R(16,BLOCK-16),r:R(7,13)});
+    buildings.push({x:x0,y:y0,w:BLOCK,h:BLOCK,park:true});
+    continue;
+  }
+  if(rng()<0.5){
+    const w=R(70,130),h=R(70,130);
+    buildings.push({x:x0+(BLOCK-w)/2,y:y0+(BLOCK-h)/2,w:w,h:h,c:pick(PALETTE)});
+  }else if(rng()<0.5){
+    const w1=R(60,80),w2=R(60,80);
+    buildings.push({x:x0+10,y:y0+14,w:w1,h:BLOCK-28,c:pick(PALETTE)});
+    buildings.push({x:x0+BLOCK-10-w2,y:y0+14,w:w2,h:BLOCK-28,c:pick(PALETTE)});
+  }else{
+    const h1=R(60,80),h2=R(60,80);
+    buildings.push({x:x0+14,y:y0+10,w:BLOCK-28,h:h1,c:pick(PALETTE)});
+    buildings.push({x:x0+14,y:y0+BLOCK-10-h2,w:BLOCK-28,h:h2,c:pick(PALETTE)});
+  }
+}
+function hitB(x,y,r){
+  for(let i=0;i<buildings.length;i++){const b=buildings[i];if(b.park)continue;
+    if(x+r>b.x&&x-r<b.x+b.w&&y+r>b.y&&y-r<b.y+b.h)return b;}
+  return null;
+}
+const HOSP={x:RC(2),y:RC(2)};
+function randRoadPoint(minDist){
+  for(let k=0;k<40;k++){
+    const p={x:RC(RI(0,N)),y:RC(RI(0,N))};
+    if(Math.hypot(p.x-player.x,p.y-player.y)>=(minDist||400))return p;
+  }
+  return {x:RC(RI(0,N)),y:RC(RI(0,N))};
+}
+
+/* ================= state ================= */
+const canvas=$('game'),ctx=canvas.getContext('2d');
+let W=0,H=0;
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;}
+addEventListener('resize',resize);resize();
+
+let money=parseInt(localStorage.getItem('palmcity_money')||'0',10)||0;
+function saveMoney(){try{localStorage.setItem('palmcity_money',String(money));}catch(e){}}
+function addMoney(n){money+=n;saveMoney();}
+
+let started=false,t=0,wanted=0,lastCrime=-999,decayT=0,shootCd=0,shootCrimeCd=0,wasted=false,wastedT=0,godT=0,hurtT=-99,policeSpawnT=0;
+const player={x:RC(10),y:RC(10),angle:-Math.PI/2,face:-Math.PI/2,hp:100,inCar:null};
+const CARS=[],PEDS=[],POLICE=[],BULLETS=[];
+const toasts=[];
+function toast(msg){toasts.push({msg:msg,age:0});if(toasts.length>3)toasts.shift();}
+function addWanted(n){wanted=clamp(wanted+n,0,5);lastCrime=t;}
+function damage(n){
+  if(godT>0||wasted)return;
+  player.hp-=n;godT=0.5;hurtT=t;
+  if(player.hp<=0){player.hp=0;wasted=true;wastedT=0;toast('WASTED!');}
+}
+
+/* ================= cars ================= */
+function mkCar(x,y,angle,color,kind){
+  return {x:x,y:y,angle:angle,speed:0,color:color,kind:kind,driver:null,hp:3,axis:'v',dir:1,turnCd:0,hitCd:0,dead:0,deadT:0};
+}
+const CAR_COLORS=['#c0392b','#2980b9','#27ae60','#f39c12','#8e44ad','#16a085','#e67e22','#ecf0f1','#2c3e50','#d35400'];
+function spawnTraffic(){
+  const v=Math.random()<0.5,dir=Math.random()<0.5?1:-1,i=RI(0,N),along=R(60,MAP-60);
+  let c;
+  if(v){c=mkCar(RC(i)-14*dir,along,dir>0?Math.PI/2:-Math.PI/2,pick(CAR_COLORS),'traffic');c.axis='v';}
+  else{c=mkCar(along,RC(i)+14*dir,dir>0?0:Math.PI,pick(CAR_COLORS),'traffic');c.axis='h';}
+  c.dir=dir;c.speed=110;c.driver='npc';CARS.push(c);
+}
+function spawnParked(){
+  const v=Math.random()<0.5,i=RI(0,N),along=R(80,MAP-80);
+  let c;
+  if(v)c=mkCar(RC(i)+ROAD/2+10,along,Math.PI/2,pick(CAR_COLORS),'parked');
+  else c=mkCar(along,RC(i)+ROAD/2+10,0,pick(CAR_COLORS),'parked');
+  CARS.push(c);
+}
+for(let i=0;i<12;i++)spawnTraffic();
+for(let i=0;i<8;i++)spawnParked();
+
+/* ================= pedestrians ================= */
+function spawnPedAt(x,y){
+  PEDS.push({x:x,y:y,axis:Math.random()<0.5?'v':'h',dir:Math.random()<0.5?1:-1,side:Math.random()<0.5?1:-1,speed:R(20,45),turnCd:R(0,2),dead:0,deadT:0});
+}
+function spawnPed(){
+  const i=RI(0,N),along=R(60,MAP-60),side=Math.random()<0.5?1:-1;
+  if(Math.random()<0.5)PEDS.push({x:RC(i)+side*(ROAD/2+9),y:along,axis:'v',dir:Math.random()<0.5?1:-1,side:side,speed:R(20,45),turnCd:R(0,2),dead:0,deadT:0});
+  else PEDS.push({x:along,y:RC(i)+side*(ROAD/2+9),axis:'h',dir:Math.random()<0.5?1:-1,side:side,speed:R(20,45),turnCd:R(0,2),dead:0,deadT:0});
+}
+for(let i=0;i<20;i++)spawnPed();
+
+/* ================= police ================= */
+function spawnPolice(){
+  const a=R(0,TAU),d=R(550,800);
+  let x=clamp(player.x+Math.cos(a)*d,40,MAP-40),y=clamp(player.y+Math.sin(a)*d,40,MAP-40);
+  x=RC(clamp(Math.round((x-ROAD/2)/CELL),0,N));y=RC(clamp(Math.round((y-ROAD/2)/CELL),0,N));
+  const c=mkCar(x,y,0,'#f5f5f5','police');POLICE.push(c);
+}
+
+/* ================= missions ================= */
+let mission=null,missionIdx=0;
+const MTYPES=['deliver','chase','timed'];
+function startMission(){
+  if(!started)return;
+  if(mission){toast('Selesaikan misi aktif dulu!');return;}
+  const type=MTYPES[missionIdx%3];missionIdx++;
+  if(type==='deliver'){const p=randRoadPoint(500);mission={type:type,label:'Antar Paket',tx:p.x,ty:p.y,reward:150};}
+  else if(type==='timed'){const p=randRoadPoint(500);mission={type:type,label:'Kejar Waktu',tx:p.x,ty:p.y,reward:200,timer:40};}
+  else{
+    const p=randRoadPoint(600);
+    const c=mkCar(p.x,p.y,0,'#ff7f00','target');c.axis='v';c.dir=1;c.speed=180;CARS.push(c);
+    mission={type:type,label:'Kejar Mobil Target',reward:250,target:c};
+  }
+  toast('Misi: '+mission.label+' (+$'+mission.reward+')');
+}
+function completeMission(){
+  addMoney(mission.reward);
+  toast('Misi selesai! +$'+mission.reward);
+  if(mission.type==='chase'){const i=CARS.indexOf(mission.target);if(i>=0)CARS.splice(i,1);}
+  mission=null;
+}
+function failMission(msg){
+  toast(msg);
+  if(mission&&mission.type==='chase'){const i=CARS.indexOf(mission.target);if(i>=0)CARS.splice(i,1);}
+  mission=null;
+}
+
+/* ================= audio ================= */
+let AC=null,master=null,engOsc=null,engGain=null,sirOsc=null,sirGain=null,muted=false;
+function initAudio(){
+  if(AC)return;
+  try{
+    AC=new (window.AudioContext||window.webkitAudioContext)();
+    master=AC.createGain();master.gain.value=muted?0:0.9;master.connect(AC.destination);
+    engOsc=AC.createOscillator();engOsc.type='sawtooth';engOsc.frequency.value=50;
+    const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=420;
+    engGain=AC.createGain();engGain.gain.value=0;
+    engOsc.connect(f);f.connect(engGain);engGain.connect(master);engOsc.start();
+    sirOsc=AC.createOscillator();sirOsc.type='triangle';sirOsc.frequency.value=750;
+    sirGain=AC.createGain();sirGain.gain.value=0;
+    sirOsc.connect(sirGain);sirGain.connect(master);sirOsc.start();
+    setInterval(()=>{if(sirOsc&&wanted>0&&started&&!muted)sirOsc.frequency.value=sirOsc.frequency.value<800?950:700;},380);
+  }catch(e){AC=null;}
+}
+function updateAudio(){
+  if(!AC)return;
+  const sp=player.inCar?Math.abs(player.inCar.speed):0;
+  engGain.gain.value=started?(player.inCar?0.04+sp/320*0.05:0.012):0;
+  engOsc.frequency.value=45+sp*0.45;
+  sirGain.gain.value=(wanted>0&&started)?0.028:0;
+}
+function beep(freq,dur,type,vol){
+  if(!AC||muted)return;
+  try{
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.type=type||'square';o.frequency.value=freq;g.gain.value=vol||0.08;
+    o.connect(g);g.connect(master);o.start();
+    g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+dur);
+    o.stop(AC.currentTime+dur);
+  }catch(e){}
+}
+function horn(){beep(330,0.28,'square',0.12);}
+function sfxShoot(){beep(880,0.08,'sawtooth',0.1);}
+function toggleMute(){
+  muted=!muted;
+  if(master)master.gain.value=muted?0:0.9;
+  $('muteBtn').textContent=muted?'🔇':'🔊';
+}
+$('muteBtn').onclick=()=>{initAudio();toggleMute();};
+$('touchToggle').onclick=()=>{
+  const el=$('touch');
+  el.style.display=el.style.display==='block'?'none':'block';
+};
+
+/* ================= input ================= */
+const keys={};
+const mouse={x:0,y:0,active:false};
+addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();
+  keys[k]=true;
+  if(!started)return;
+  if(k==='e')tryEnterExit();
+  if(k==='m')startMission();
+  if(k===' ')shoot();
+  if(k==='h')horn();
+  if(k==='p')toggleMute();
+});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
+addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;mouse.active=true;});
+canvas.addEventListener('mousedown',e=>{
+  mouse.x=e.clientX;mouse.y=e.clientY;mouse.active=true;
+  if(started){initAudio();if(AC&&AC.resume)AC.resume();shoot();}
+});
+$('startBtn').onclick=()=>{
+  initAudio();if(AC&&AC.resume)AC.resume();
+  started=true;$('start').style.display='none';
+};
+if(location.search.indexOf('autostart')>=0){started=true;$('start').style.display='none';}
+
+/* ---- touch controls ---- */
+const joy={x:0,y:0,active:false};
+let btnRun=false;
+const isTouch=('ontouchstart'in window)||navigator.maxTouchPoints>0;
+if(isTouch)$('touch').style.display='block';
+(function(){
+  const joyEl=$('joy'),stick=$('stick');
+  let pid=null;
+  function setJoy(e){
+    const r=joyEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+    let dx=(e.clientX-cx)/44,dy=(e.clientY-cy)/44;
+    const m=Math.hypot(dx,dy);if(m>1){dx/=m;dy/=m;}
+    joy.x=dx;joy.y=dy;joy.active=true;
+    stick.style.left=(39+dx*38)+'px';stick.style.top=(39+dy*38)+'px';
+  }
+  joyEl.addEventListener('pointerdown',e=>{pid=e.pointerId;joyEl.setPointerCapture(pid);setJoy(e);});
+  joyEl.addEventListener('pointermove',e=>{if(e.pointerId===pid)setJoy(e);});
+  const end=e=>{if(e.pointerId===pid){pid=null;joy.x=0;joy.y=0;joy.active=false;stick.style.left='39px';stick.style.top='39px';}};
+  joyEl.addEventListener('pointerup',end);joyEl.addEventListener('pointercancel',end);
+  const bind=(id,down,up)=>{
+    const el=$(id);
+    el.addEventListener('pointerdown',e=>{e.preventDefault();initAudio();down();});
+    if(up){el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);}
+  };
+  bind('btnE',()=>{if(started)tryEnterExit();});
+  bind('btnShoot',()=>{if(started)shoot();});
+  bind('btnHorn',()=>{if(started)horn();});
+  bind('btnRun',()=>{btnRun=true;},()=>{btnRun=false;});
+  bind('btnMission',()=>{if(started)startMission();});
+})();
+
+function readInput(){
+  let mx=0,my=0,gas=0,brake=0,steer=0,run=false;
+  if(keys['w']||keys['arrowup']){my-=1;gas=1;}
+  if(keys['s']||keys['arrowdown']){my+=1;brake=1;}
+  if(keys['a']||keys['arrowleft']){mx-=1;steer-=1;}
+  if(keys['d']||keys['arrowright']){mx+=1;steer+=1;}
+  if(keys['shift'])run=true;
+  if(joy.active){
+    mx+=joy.x;my+=joy.y;
+    if(joy.y<-0.3)gas=1;if(joy.y>0.3)brake=1;
+    steer+=joy.x;if(btnRun)run=true;
+  }
+  return {mx:mx,my:my,gas:gas,brake:brake,steer:clamp(steer,-1,1),run:run};
+}
+
+/* ================= actions ================= */
+function tryEnterExit(){
+  if(wasted)return;
+  if(player.inCar){
+    const c=player.inCar;c.driver=null;player.inCar=null;
+    player.x=c.x+Math.cos(c.angle+Math.PI/2)*32;
+    player.y=c.y+Math.sin(c.angle+Math.PI/2)*32;
+    player.x=clamp(player.x,10,MAP-10);player.y=clamp(player.y,10,MAP-10);
+    return;
+  }
+  let best=null,bd=72;
+  for(const c of CARS){
+    if(c.kind==='police')continue;
+    const d=Math.hypot(c.x-player.x,c.y-player.y);
+    if(d<bd){bd=d;best=c;}
+  }
+  if(best){
+    if(best.kind==='traffic'&&best.driver==='npc'){
+      spawnPedAt(best.x+20,best.y);
+      addWanted(1);toast('Carjack! Polisi mengejarmu +1 ★');
+    }
+    best.driver='player';player.inCar=best;
+  }
+}
+function shoot(){
+  if(!started||wasted||shootCd>0)return;
+  shootCd=0.25;
+  const from=player.inCar||player;
+  let ang=player.face;
+  if(mouse.active&&!isTouch)ang=Math.atan2(mouse.y-H/2,mouse.x-W/2);
+  else if(player.inCar)ang=player.inCar.angle;
+  BULLETS.push({x:from.x+Math.cos(ang)*20,y:from.y+Math.sin(ang)*20,angle:ang,life:0.8});
+  sfxShoot();
+  if(t-shootCrimeCd>4){addWanted(1);shootCrimeCd=t;}
+}
+
+/* ================= updates ================= */
+function updateCar(c,dt,inp){
+  const maxF=c.kind==='police'?340:300,maxR=120;
+  if(inp.gas)c.speed+=330*dt;
+  if(inp.brake)c.speed-=c.speed>0?520*dt:220*dt;
+  c.speed-=c.speed*0.55*dt;
+  c.speed=clamp(c.speed,-maxR,maxF);
+  c.angle+=inp.steer*clamp(c.speed/110,-1,1)*1.9*dt;
+  const nx=c.x+Math.cos(c.angle)*c.speed*dt,ny=c.y+Math.sin(c.angle)*c.speed*dt;
+  if(hitB(nx,ny,16)){
+    if(c===player.inCar&&Math.abs(c.speed)>230)damage(10);
+    c.speed=0;
+  }else{
+    c.x=clamp(nx,14,MAP-14);c.y=clamp(ny,14,MAP-14);
+  }
+}
+function updateTraffic(c,dt){
+  c.turnCd-=dt;c.hitCd-=dt;
+  const sp=c.kind==='target'?190:110;
+  const along=c.axis==='v'?c.y:c.x;
+  const ci=clamp(Math.round((along-ROAD/2)/CELL),0,N),center=RC(ci);
+  if(Math.abs(along-center)<14&&c.turnCd<=0){
+    c.turnCd=2;
+    if(Math.random()<(c.kind==='target'?0.45:0.25)){
+      if(c.axis==='v'){c.axis='h';c.dir=Math.random()<0.5?1:-1;c.y=center+14*c.dir;}
+      else{c.axis='v';c.dir=Math.random()<0.5?1:-1;c.x=center-14*c.dir;}
+    }
+  }
+  if(along<36){c.dir=1;}else if(along>MAP-36){c.dir=-1;}
+  if(c.axis==='v'){c.y+=c.dir*sp*dt;c.angle=c.dir>0?Math.PI/2:-Math.PI/2;}
+  else{c.x+=c.dir*sp*dt;c.angle=c.dir>0?0:Math.PI;}
+  // berhenti sebentar kalau menabrak mobil pemain
+  if(player.inCar&&Math.hypot(c.x-player.inCar.x,c.y-player.inCar.y)<34&&c.hitCd<=0){
+    c.hitCd=1;
+    if(Math.abs(player.inCar.speed)>120)damage(4);
+  }
+}
+function updatePed(p,dt){
+  if(p.dead){p.deadT+=dt;return;}
+  p.turnCd-=dt;
+  const along=p.axis==='v'?p.y:p.x;
+  const ci=clamp(Math.round((along-ROAD/2)/CELL),0,N),center=RC(ci);
+  if(Math.abs(along-center)<12&&p.turnCd<=0){
+    p.turnCd=2;
+    if(Math.random()<0.3){
+      if(p.axis==='v'){p.axis='h';p.dir=Math.random()<0.5?1:-1;p.y=center+p.side*(ROAD/2+9);}
+      else{p.axis='v';p.dir=Math.random()<0.5?1:-1;p.x=center+p.side*(ROAD/2+9);}
+    }
+  }
+  if(along<30)p.dir=1;else if(along>MAP-30)p.dir=-1;
+  if(p.axis==='v')p.y+=p.dir*p.speed*dt;else p.x+=p.dir*p.speed*dt;
+}
+function updatePolice(c,dt){
+  c.hitCd-=dt;
+  if(c.dead){c.deadT+=dt;c.speed*=0.9;return;}
+  const dx=player.x-c.x,dy=player.y-c.y,d=Math.hypot(dx,dy);
+  const want=Math.atan2(dy,dx);
+  const steer=clamp(angDiff(c.angle,want)*2.2,-1,1);
+  updateCar(c,dt,{gas:1,brake:0,steer:steer});
+  if(d<36&&c.hitCd<=0){
+    c.hitCd=0.8;c.speed*=-0.25;
+    damage(8);
+    toast('Polisi menabrakmu!');
+  }
+}
+function updateBullets(dt){
+  for(let i=BULLETS.length-1;i>=0;i--){
+    const b=BULLETS[i];
+    b.x+=Math.cos(b.angle)*720*dt;b.y+=Math.sin(b.angle)*720*dt;b.life-=dt;
+    let dead=b.life<=0||b.x<0||b.y<0||b.x>MAP||b.y>MAP||hitB(b.x,b.y,2);
+    if(!dead){
+      for(const p of PEDS){
+        if(!p.dead&&Math.hypot(p.x-b.x,p.y-b.y)<14){p.dead=1;p.deadT=0;addWanted(1);dead=true;break;}
+      }
+    }
+    if(!dead){
+      for(const c of POLICE){
+        if(!c.dead&&Math.hypot(c.x-b.x,c.y-b.y)<20){
+          c.hp--;if(c.hp<=0){c.dead=1;c.deadT=0;toast('Mobil polisi dilumpuhkan!');}
+          dead=true;break;
+        }
+      }
+    }
+    if(!dead){
+      for(const c of CARS){
+        if(c!==player.inCar&&Math.hypot(c.x-b.x,c.y-b.y)<20){c.speed*=0.4;dead=true;break;}
+      }
+    }
+    if(dead)BULLETS.splice(i,1);
+  }
+}
+function update(dt){
+  const inp=started?readInput():{mx:0,my:0,gas:0,brake:0,steer:0,run:false};
+  shootCd-=dt;godT-=dt;
+  // --- player ---
+  if(!wasted){
+    if(player.inCar){
+      updateCar(player.inCar,dt,inp);
+      player.x=player.inCar.x;player.y=player.inCar.y;player.face=player.inCar.angle;
+      // tabrak pejalan kaki
+      for(const p of PEDS){
+        if(!p.dead&&Math.hypot(p.x-player.x,p.y-player.y)<24){
+          p.dead=1;p.deadT=0;addWanted(1);toast('Kamu menabrak pejalan kaki! +1 ★');
+        }
+      }
+    }else if(started){
+      const sp=inp.run?280:150;
+      let mx=inp.mx,my=inp.my;
+      const m=Math.hypot(mx,my);
+      if(m>0.01){
+        mx/=m;my/=m;player.face=Math.atan2(my,mx);
+        const nx=player.x+mx*sp*dt,ny=player.y+my*sp*dt;
+        if(!hitB(nx,player.y,12))player.x=clamp(nx,10,MAP-10);
+        if(!hitB(player.x,ny,12))player.y=clamp(ny,10,MAP-10);
+      }
+    }
+  }
+  // --- traffic & parked ---
+  for(const c of CARS){
+    if(c===player.inCar)continue;
+    if(c.kind==='traffic'||c.kind==='target')updateTraffic(c,dt);
+  }
+  // --- peds ---
+  for(let i=PEDS.length-1;i>=0;i--){
+    const p=PEDS[i];updatePed(p,dt);
+    if(p.dead&&p.deadT>2)PEDS.splice(i,1);
+  }
+  if(PEDS.length<20&&Math.random()<0.02)spawnPed();
+  // --- police ---
+  if(started&&!wasted){
+    const wantN=Math.min(wanted,5);
+    policeSpawnT-=dt;
+    if(POLICE.length<wantN&&policeSpawnT<=0){spawnPolice();policeSpawnT=1.5;}
+    for(let i=POLICE.length-1;i>=0;i--){
+      const c=POLICE[i];updatePolice(c,dt);
+      const d=Math.hypot(c.x-player.x,c.y-player.y);
+      if((c.dead&&c.deadT>8)||d>1700||POLICE.length>wantN&&d>900)POLICE.splice(i,1);
+    }
+    // wanted turun kalau lama kabur
+    if(wanted>0){
+      const near=POLICE.some(c=>Math.hypot(c.x-player.x,c.y-player.y)<550);
+      if(t-lastCrime>15&&!near){decayT+=dt;if(decayT>8){wanted--;decayT=0;toast('Wanted turun: '+wanted+' ★');}}
+      else decayT=0;
+    }
+  }
+  updateBullets(dt);
+  // --- health regen ---
+  if(!wasted&&t-hurtT>5&&player.hp<100)player.hp=Math.min(100,player.hp+2*dt);
+  // --- mission ---
+  if(mission&&started&&!wasted){
+    if(mission.type==='timed'){mission.timer-=dt;if(mission.timer<=0){failMission('Waktu habis! Misi gagal.');}}
+    else if(mission.type==='chase'){
+      const tc=mission.target;
+      if(Math.hypot(tc.x-player.x,tc.y-player.y)<45)completeMission();
+      else if(tc.x<0||tc.x>MAP||tc.y<0||tc.y>MAP)failMission('Target kabur! Misi gagal.');
+    }else{
+      if(Math.hypot(mission.tx-player.x,mission.ty-player.y)<42)completeMission();
+    }
+  }
+  // --- wasted respawn ---
+  if(wasted){
+    wastedT+=dt;
+    if(wastedT>2.2){
+      wasted=false;player.hp=100;wanted=0;player.inCar=null;
+      player.x=HOSP.x;player.y=HOSP.y;
+      money=Math.floor(money*0.9);saveMoney();
+      toast('Kamu dirawat di rumah sakit. -$10%');
+    }
+  }
+  for(const s of toasts)s.age+=dt;
+  while(toasts.length&&toasts[0].age>2.6)toasts.shift();
+}
+
+/* ================= draw ================= */
+let cam={x:0,y:0};
+function drawCar(c){
+  ctx.save();ctx.translate(c.x,c.y);ctx.rotate(c.angle);
+  ctx.fillStyle='#111';
+  ctx.fillRect(-14,-11,28,5);ctx.fillRect(-14,6,28,5);
+  ctx.fillStyle=c.color;
+  ctx.fillRect(-17,-9,34,18);
+  ctx.fillStyle='rgba(180,220,255,.85)';
+  ctx.fillRect(2,-7,8,14);
+  ctx.fillStyle='rgba(0,0,0,.25)';
+  ctx.fillRect(-17,-9,34,4);
+  if(c.kind==='police'){
+    ctx.fillStyle='#1e50c8';ctx.fillRect(-6,-9,12,18);
+    const fl=Math.floor(t*6)%2===0;
+    ctx.fillStyle=fl?'#ff2a2a':'#2a6bff';
+    ctx.fillRect(-4,-11,8,4);
+  }
+  if(c.kind==='target'){ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.strokeRect(-17,-9,34,18);}
+  ctx.restore();
+}
+function draw(){
+  ctx.fillStyle='#20242a';ctx.fillRect(0,0,W,H);
+  cam.x=clamp(player.x-W/2,0,Math.max(0,MAP-W));
+  cam.y=clamp(player.y-H/2,0,Math.max(0,MAP-H));
+  if(MAP<W)cam.x=(MAP-W)/2;
+  if(MAP<H)cam.y=(MAP-H)/2;
+  ctx.save();ctx.translate(-cam.x,-cam.y);
+  // tanah (trotoar)
+  ctx.fillStyle='#9aa0a6';ctx.fillRect(0,0,MAP,MAP);
+  // jalan
+  ctx.fillStyle='#33373d';
+  for(let i=0;i<=N;i++){ctx.fillRect(i*CELL,0,ROAD,MAP);ctx.fillRect(0,i*CELL,MAP,ROAD);}
+  // marka jalan
+  ctx.strokeStyle='#e8c33a';ctx.lineWidth=2;ctx.setLineDash([16,20]);
+  ctx.beginPath();
+  for(let i=0;i<=N;i++){
+    const c=RC(i);
+    if(c>cam.x-60&&c<cam.x+W+60){ctx.moveTo(c,Math.max(0,cam.y-20));ctx.lineTo(c,Math.min(MAP,cam.y+H+20));}
+    if(c>cam.y-60&&c<cam.y+H+60){ctx.moveTo(Math.max(0,cam.x-20),c);ctx.lineTo(Math.min(MAP,cam.x+W+20),c);}
+  }
+  ctx.stroke();ctx.setLineDash([]);
+  // gedung & taman
+  for(const b of buildings){
+    if(b.x+b.w<cam.x||b.x>cam.x+W||b.y+b.h<cam.y||b.y>cam.y+H)continue;
+    if(b.park){ctx.fillStyle='#5da24a';ctx.fillRect(b.x,b.y,b.w,b.h);}
+    else{
+      ctx.fillStyle=b.c;ctx.fillRect(b.x,b.y,b.w,b.h);
+      ctx.strokeStyle='rgba(0,0,0,.35)';ctx.lineWidth=3;ctx.strokeRect(b.x+1.5,b.y+1.5,b.w-3,b.h-3);
+      ctx.fillStyle='rgba(255,255,255,.12)';ctx.fillRect(b.x+6,b.y+6,b.w-12,8);
+    }
+  }
+  // pohon
+  ctx.fillStyle='#2f7a33';
+  for(const tr of trees){
+    if(tr.x>cam.x-20&&tr.x<cam.x+W+20&&tr.y>cam.y-20&&tr.y<cam.y+H+20){
+      ctx.beginPath();ctx.arc(tr.x,tr.y,tr.r,0,TAU);ctx.fill();
+    }
+  }
+  // rumah sakit
+  ctx.fillStyle='#fff';ctx.fillRect(HOSP.x-14,HOSP.y-14,28,28);
+  ctx.fillStyle='#e33';ctx.fillRect(HOSP.x-3,HOSP.y-10,6,20);ctx.fillRect(HOSP.x-10,HOSP.y-3,20,6);
+  // marker misi
+  if(mission){
+    const tx=mission.type==='chase'?mission.target.x:mission.tx;
+    const ty=mission.type==='chase'?mission.target.y:mission.ty;
+    const pulse=1+Math.sin(t*5)*0.15;
+    ctx.strokeStyle='#ffd23f';ctx.lineWidth=4;
+    ctx.beginPath();ctx.arc(tx,ty,26*pulse,0,TAU);ctx.stroke();
+    ctx.fillStyle='rgba(255,210,63,.25)';
+    ctx.beginPath();ctx.arc(tx,ty,26*pulse,0,TAU);ctx.fill();
+    ctx.fillStyle='#ffd23f';
+    ctx.beginPath();ctx.moveTo(tx,ty-34);ctx.lineTo(tx-8,ty-18);ctx.lineTo(tx+8,ty-18);ctx.closePath();ctx.fill();
+  }
+  // mobil
+  for(const c of CARS)drawCar(c);
+  for(const c of POLICE)drawCar(c);
+  // pejalan kaki
+  for(const p of PEDS){
+    if(p.x<cam.x-20||p.x>cam.x+W+20||p.y<cam.y-20||p.y>cam.y+H+20)continue;
+    if(p.dead){
+      ctx.strokeStyle='#c0392b';ctx.lineWidth=3;
+      ctx.beginPath();
+      ctx.moveTo(p.x-7,p.y-7);ctx.lineTo(p.x+7,p.y+7);
+      ctx.moveTo(p.x+7,p.y-7);ctx.lineTo(p.x-7,p.y+7);
+      ctx.stroke();
+    }else{
+      ctx.fillStyle=pick(['#e74c3c','#3498db','#f1c40f','#ecf0f1','#9b59b6']);
+      ctx.beginPath();ctx.arc(p.x,p.y,6,0,TAU);ctx.fill();
+      ctx.fillStyle='#222';ctx.beginPath();ctx.arc(p.x,p.y-2,3,0,TAU);ctx.fill();
+    }
+  }
+  // peluru
+  ctx.fillStyle='#ffe14d';
+  for(const b of BULLETS){ctx.beginPath();ctx.arc(b.x,b.y,4,0,TAU);ctx.fill();}
+  // pemain (jalan kaki)
+  if(!player.inCar&&!wasted){
+    ctx.fillStyle='#ffd23f';
+    ctx.beginPath();ctx.arc(player.x,player.y,12,0,TAU);ctx.fill();
+    ctx.strokeStyle='#111';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(player.x,player.y,12,0,TAU);ctx.stroke();
+    ctx.strokeStyle='#111';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(player.x,player.y);
+    ctx.lineTo(player.x+Math.cos(player.face)*16,player.y+Math.sin(player.face)*16);ctx.stroke();
+  }
+  ctx.restore();
+  drawHUD();
+}
+function drawHUD(){
+  // uang + health
+  ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(10,10,210,64);
+  ctx.fillStyle='#7CFC00';ctx.font='bold 22px Arial';ctx.textAlign='left';
+  ctx.fillText('$'+money.toLocaleString('en-US'),20,36);
+  ctx.fillStyle='#333';ctx.fillRect(20,46,190,12);
+  ctx.fillStyle=player.hp>50?'#2ecc71':player.hp>25?'#f39c12':'#e74c3c';
+  ctx.fillRect(20,46,190*player.hp/100,12);
+  ctx.fillStyle='#fff';ctx.font='11px Arial';
+  ctx.fillText('HP '+Math.ceil(player.hp),20,70);
+  // wanted (di bawah tombol DOM kanan-atas supaya tidak tertutup)
+  ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(W-190,62,180,44);
+  ctx.font='bold 24px Arial';ctx.textAlign='right';
+  for(let i=0;i<5;i++){
+    ctx.fillStyle=i<wanted?'#ffd23f':'#555';
+    ctx.fillText('★',W-24-i*30,92);
+  }
+  ctx.textAlign='left';
+  // misi
+  if(mission){
+    const tx=mission.type==='chase'?mission.target.x:mission.tx;
+    const ty=mission.type==='chase'?mission.target.y:mission.ty;
+    const d=Math.round(Math.hypot(tx-player.x,ty-player.y));
+    ctx.fillStyle='rgba(0,0,0,.55)';
+    const label=mission.label+'  •  '+d+'m'+(mission.type==='timed'?'  •  '+Math.ceil(mission.timer)+'s':'');
+    ctx.font='bold 15px Arial';
+    const tw=ctx.measureText(label).width;
+    ctx.fillRect(W/2-tw/2-12,H-46,tw+24,30);
+    ctx.fillStyle='#ffd23f';ctx.textAlign='center';
+    ctx.fillText(label,W/2,H-26);ctx.textAlign='left';
+    // panah ke target
+    const sx=tx-cam.x,sy=ty-cam.y;
+    if(sx<0||sx>W||sy<0||sy>H){
+      const cx=clamp(sx,30,W-30),cy=clamp(sy,30,H-30);
+      const a=Math.atan2(sy-cy,sx-cx);
+      ctx.save();ctx.translate(cx,cy);ctx.rotate(a);
+      ctx.fillStyle='#ffd23f';
+      ctx.beginPath();ctx.moveTo(16,0);ctx.lineTo(-8,-10);ctx.lineTo(-8,10);ctx.closePath();ctx.fill();
+      ctx.restore();
+    }
+  }else if(started){
+    ctx.font='13px Arial';ctx.textAlign='center';
+    const msg='Tekan M untuk misi — hadiah $150–$250';
+    const twm=ctx.measureText(msg).width;
+    ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillRect(W/2-twm/2-10,H-30,twm+20,22);
+    ctx.fillStyle='#fff';ctx.fillText(msg,W/2,H-15);
+    ctx.textAlign='left';
+  }
+  // minimap
+  const MM=170,s=MM/MAP,mx=14,my=H-MM-14;
+  ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(mx-4,my-4,MM+8,MM+8);
+  ctx.fillStyle='#2c3138';ctx.fillRect(mx,my,MM,MM);
+  ctx.fillStyle='#5a616a';
+  for(let i=0;i<=N;i++){
+    ctx.fillRect(mx+RC(i)*s-1,my,2,MM);
+    ctx.fillRect(mx,my+RC(i)*s-1,MM,2);
+  }
+  ctx.fillStyle='#2ecc71';ctx.fillRect(mx+HOSP.x*s-3,my+HOSP.y*s-3,6,6);
+  if(mission){
+    const tx=mission.type==='chase'?mission.target.x:mission.tx;
+    const ty=mission.type==='chase'?mission.target.y:mission.ty;
+    ctx.fillStyle='#ffd23f';
+    ctx.beginPath();ctx.arc(mx+tx*s,my+ty*s,5,0,TAU);ctx.fill();
+  }
+  ctx.fillStyle='#3498db';
+  for(const c of POLICE){ctx.beginPath();ctx.arc(mx+c.x*s,my+c.y*s,3,0,TAU);ctx.fill();}
+  ctx.fillStyle='#fff';
+  ctx.beginPath();ctx.arc(mx+player.x*s,my+player.y*s,4,0,TAU);ctx.fill();
+  // toast
+  ctx.textAlign='center';ctx.font='bold 17px Arial';
+  toasts.forEach((s,i)=>{
+    const a=s.age<2.2?1:Math.max(0,1-(s.age-2.2)/0.4);
+    ctx.fillStyle='rgba(0,0,0,'+(0.6*a)+')';
+    const tw=ctx.measureText(s.msg).width;
+    ctx.fillRect(W/2-tw/2-10,100+i*30,tw+20,24);
+    ctx.fillStyle='rgba(255,255,255,'+a+')';
+    ctx.fillText(s.msg,W/2,117+i*30);
+  });
+  ctx.textAlign='left';
+  // hint kontrol (desktop) — atas-tengah, di atas toast
+  if(started&&!isTouch){
+    ctx.fillStyle='rgba(255,255,255,.6)';ctx.font='12px Arial';ctx.textAlign='center';
+    ctx.fillText('WASD jalan • Shift lari • E masuk mobil • Space tembak • M misi • H klakson',W/2,64);
+    ctx.textAlign='left';
+  }
+  // wasted
+  if(wasted){
+    ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#e74c3c';ctx.font='bold 64px Arial';ctx.textAlign='center';
+    ctx.fillText('WASTED',W/2,H/2-10);
+    ctx.fillStyle='#fff';ctx.font='18px Arial';
+    ctx.fillText('Respawn di rumah sakit…',W/2,H/2+30);
+    ctx.textAlign='left';
+  }
+}
+
+/* ================= loop ================= */
+let last=performance.now();
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt=Math.min(0.05,(now-last)/1000);last=now;t+=dt;
+  if(!wasted||true)update(dt);
+  draw();
+  updateAudio();
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
